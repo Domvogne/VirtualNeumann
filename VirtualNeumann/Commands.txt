@@ -12,3 +12,7 @@ dec 1
 jmp 1
 ret 0
 set 2
+inv 1
+jt 2
+jf 2
+cop 2

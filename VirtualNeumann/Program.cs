@@ -9,13 +9,12 @@ namespace VirtualNeumann
             Computer vvn = new Computer(50);
             //vvn.SetProgram("TestCode.hasm");
             //vvn.Run();
-            Memory testMem = new Memory(0, 256);
-            Random random = new Random();
-            for (int i = 0; i < 256; i++)
-            {
-                testMem.Data[i] = (short)random.Next(0, 150);
-            }
-            Console.WriteLine(testMem.ToString());
+            Computer.LoadCommands();
+            Computer c = new Computer(50);
+
+            c.SetProgram("C:\\Users\\Mimm\\Projects\\VisualStudioProjects\\VirtualNeumann\\VirtualNeumann\\TestCode.hasm");
+            c.Run();
+
         }
     }
 
@@ -29,12 +28,13 @@ namespace VirtualNeumann
         public Memory RAM;
         public InputOutput IO;
         public string[] Programm;
-        public Computer(int tick)
+        public bool UserTick;
+        public Computer(int tick, bool clickMode = false)
         {
             ALU = new ArithmeticLogicUnit();
             CU = new ControlUnit();
 
-            Cache = new Memory(tick, 512);
+            Cache = new Memory(tick, 128);
             RAM = new Memory(tick * 3, 1024);
 
             IO = new InputOutput();
@@ -47,6 +47,8 @@ namespace VirtualNeumann
             CU.ALU = ALU;
             CU.Cache = Cache;
             CU.RAM = RAM;
+            
+            UserTick = clickMode;
         }
 
         public void SetProgram(string progFile)
@@ -57,10 +59,10 @@ namespace VirtualNeumann
         public void Run()
         {
             CU.SetMachineCode(Compile());
-            CU.Run();
+            CU.Run(UserTick);
         }
 
-        public void LoadCommands()
+        public static void LoadCommands()
         {
             var allCommands = File.ReadAllLines("Commands.txt");
             Commands = new (string code, byte args)[allCommands.Length];
@@ -77,7 +79,8 @@ namespace VirtualNeumann
             var cmds = Computer.Commands.ToList();
             foreach (var line in Programm)
             {
-                var parts = line.Split(' ');
+                var clear = line.Split("#")[0];
+                var parts = clear.Trim().Split(' ');
                 mc.Add((short)cmds.FindIndex(i => i.code == parts[0]));
                 for (int i = 1; i < parts.Length; i++)
                 {
@@ -138,13 +141,27 @@ namespace VirtualNeumann
                     Cache.Set(ops[0], (short)(Cache.Get(ops[0]) - 1));
                     break;
                 case 11:
-                    CU.InstructionPointer = RAM.Get(ops[0]);
+                    CU.InstructionPointer = ops[0];
                     break;
                 case 12:
                     CU.InstructionPointer = -1;
                     break;
                 case 13:
                     Cache.Set(ops[0], ops[1]);
+                    break;
+                case 14:
+                    Cache.Set(ops[0], (short)(Cache.Get(ops[0]) == 0 ? 1 : 0));
+                    break;
+                case 15:
+                    if (Cache.Get(ops[0]) != 0)
+                        CU.InstructionPointer = ops[1];
+                    break;
+                case 16:
+                    if (Cache.Get(ops[0]) == 0)
+                        CU.InstructionPointer = ops[1];
+                    break;
+                case 17:
+                    Cache.Set(ops[1], Cache.Get(ops[0]));
                     break;
                 default:
                     break;
@@ -157,27 +174,37 @@ namespace VirtualNeumann
         public Memory Cache;
         public Memory RAM;
         public ArithmeticLogicUnit ALU;
-
+        int codeLen;
         public void SetMachineCode(short[] program)
         {
-            program.CopyTo(RAM.Data, 0);
+            codeLen = program.Length;
+            Cache.DataOffset = (codeLen / 16 + 1) * 16;
+            program.CopyTo(Cache.Data, 0);
         }
 
-        public void Run()
+        public void Run(bool click = false)
         {
 
-            InstructionPointer = -1;
+            InstructionPointer = 0;
             do
             {
-                InstructionPointer++;
-                var op = RAM.Get(InstructionPointer);
-
-                var args = new short[Computer.Commands[op].args];
-                for (short i = 0; i < args.Count(); i++)
+                if (click)
+                    Console.ReadKey();
+                var op = Cache.Get(InstructionPointer, true);
+                Cache.RunIndex = InstructionPointer;
+                
+                var args = new short[Computer.Commands[op].args + 1];
+                args[0] = op;
+                for (short i = 1; i < args.Count(); i++)
                 {
-                    args[i] = RAM.Get(++InstructionPointer);
+                    args[i] = Cache.Get(++InstructionPointer, true);
                 }
+
                 ALU.Execute(args);
+                InstructionPointer++;
+                Console.SetCursorPosition(0, 0);
+                Console.Clear();
+                Console.WriteLine(Cache.ToString());
             }
             while (InstructionPointer != -1);
 
@@ -188,23 +215,25 @@ namespace VirtualNeumann
         int lastChange;
         public int Delay;
         public short[] Data;
+        public int DataOffset;
+        public int RunIndex = -1;
         public Memory(int speed, int size)
         {
             Delay = speed;
             Data = new short[size];
         }
 
-        public short Get(short index)
+        public short Get(short index, bool code = false)
         {
             Thread.Sleep(Delay);
-            return Data[index];
+            return Data[index + (code ? 0 : DataOffset)];
         }
 
-        public void Set(short index, short value)
+        public void Set(short index, short value, bool code = false)
         {
             Thread.Sleep(Delay);
-            Data[index] = value;
-            lastChange = index;
+            Data[index + (code ? 0 : DataOffset)] = value;
+            lastChange = index + (code ? 0 : DataOffset);
         }
 
         public override string ToString()
@@ -219,10 +248,13 @@ namespace VirtualNeumann
                 foreach (var cell in line)
                 {
 
-                    sb.Append(cell + string.Join("", Enumerable.Repeat(' ', mLen - cell.Length)) + (n == lastChange ? "#" : " ") + "|");
+                    sb.Append(RunIndex == n ? ">" : " ");
+                    sb.Append(cell);
+                    sb.Append(string.Join("", Enumerable.Repeat(' ', mLen - cell.Length)));
+                    sb.Append((n == lastChange ? "#" : " ") + "|");
                     n++;
                 }
-                sb.AppendLine('\n' + string.Join("", Enumerable.Repeat('-', (mLen + 2) * Data.Length / 16)));
+                sb.AppendLine("\n");
             }
             return sb.ToString();
         }
@@ -235,7 +267,9 @@ namespace VirtualNeumann
         }
         public short In()
         {
-            return Convert.ToInt16(Console.ReadLine(), 16);
+            Console.Write(">");
+            var pre = Console.ReadLine();
+            return Convert.ToInt16(pre);
         }
     }
 }

@@ -1,1 +1,10 @@
-﻿
+﻿set 0 1
+in 2
+cop 2 1
+dec 2
+mul 1 2
+cmp 4 0 2
+inv 4
+jt 4 7
+out 1
+ret

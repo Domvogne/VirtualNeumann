@@ -8,10 +8,17 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Update="Commands.txt">
+    <None Remove="TestCode.hasm" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="TestCode.hasm">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="TestCode.hasm">
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Commands.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
