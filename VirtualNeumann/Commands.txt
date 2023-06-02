@@ -1,0 +1,14 @@
+﻿mov 3
+trn 2
+in 1
+out 1
+add 2
+sub 2
+mul 2
+div 2
+cmp 3
+inc 1
+dec 1
+jmp 1
+ret 0
+set 2
