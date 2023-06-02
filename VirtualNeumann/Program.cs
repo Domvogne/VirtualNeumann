@@ -47,7 +47,7 @@ namespace VirtualNeumann
             CU.ALU = ALU;
             CU.Cache = Cache;
             CU.RAM = RAM;
-            
+
             UserTick = clickMode;
         }
 
@@ -192,7 +192,7 @@ namespace VirtualNeumann
                     Console.ReadKey();
                 var op = Cache.Get(InstructionPointer, true);
                 Cache.RunIndex = InstructionPointer;
-                
+
                 var args = new short[Computer.Commands[op].args + 1];
                 args[0] = op;
                 for (short i = 1; i < args.Count(); i++)
@@ -205,6 +205,7 @@ namespace VirtualNeumann
                 Console.SetCursorPosition(0, 0);
                 Console.Clear();
                 Console.WriteLine(Cache.ToString());
+                ALU.IO.PrintHistory();
             }
             while (InstructionPointer != -1);
 
@@ -261,15 +262,31 @@ namespace VirtualNeumann
     }
     public class InputOutput
     {
+        public List<object> History;
+
+        public InputOutput()
+        {
+            History = new List<object>();
+        }
         public void Out(short value)
         {
+            History.Add(value);
             Console.WriteLine(value);
         }
         public short In()
         {
-            Console.Write(">");
+            Console.Write("<");
             var pre = Console.ReadLine();
+            History.Add(pre);
             return Convert.ToInt16(pre);
+        }
+        public void PrintHistory()
+        {
+            foreach (var item in History)
+            {
+                if (item is short) Console.WriteLine(">" + item);
+                else Console.WriteLine("<" + item);
+            }
         }
     }
 }
