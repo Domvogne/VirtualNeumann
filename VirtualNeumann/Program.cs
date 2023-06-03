@@ -6,13 +6,12 @@ namespace VirtualNeumann
     {
         static void Main(string[] args)
         {
-            Computer vvn = new Computer(50);
             //vvn.SetProgram("TestCode.hasm");
             //vvn.Run();
             Computer.LoadCommands();
-            Computer c = new Computer(50);
+            Computer c = new Computer(50, false);
 
-            c.SetProgram("C:\\Users\\Mimm\\Projects\\VisualStudioProjects\\VirtualNeumann\\VirtualNeumann\\TestCode.hasm");
+            c.SetProgram("C:\\Users\\Mimm\\Projects\\VisualStudioProjects\\VirtualNeumann\\VirtualNeumann\\fibanachi.hasm");
             c.Run();
 
         }
@@ -103,7 +102,7 @@ namespace VirtualNeumann
             {
                 case 0:
                     short buffer;
-                    Memory m = ops[1] switch { 0 => Cache, 1 => RAM };
+                    Memory m = ops[0] switch { 0 => Cache, 1 => RAM };
                     buffer = m.Get(ops[1]);
                     m.Set(ops[1], m.Get(ops[2]));
                     m.Set(ops[2], buffer);
@@ -240,7 +239,7 @@ namespace VirtualNeumann
         public override string ToString()
         {
             var stringed = Data.Select(x => x.ToString()).ToList();
-            var mLen = stringed.Max(x => x.Length);
+            var mLen = /*stringed.Max(x => x.Length);*/5;
             StringBuilder sb = new StringBuilder();
             var lines = stringed.Chunk(16);
             int n = 0;

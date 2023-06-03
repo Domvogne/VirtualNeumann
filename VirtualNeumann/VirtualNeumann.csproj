@@ -8,11 +8,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="TestCode.hasm" />
+    <None Remove="factorial.hasm" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="TestCode.hasm">
+    <Content Include="factorial.hasm">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
